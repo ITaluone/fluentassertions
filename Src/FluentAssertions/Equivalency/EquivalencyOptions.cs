@@ -29,7 +29,11 @@ public class EquivalencyOptions<TExpectation>
     /// </summary>
     public EquivalencyOptions<TExpectation> Excluding(Expression<Func<TExpectation, object>> expression)
     {
-        AddSelectionRule(new ExcludeMemberByPathSelectionRule(expression.GetMemberPath()));
+        foreach (var memberPath in expression.GetMemberPaths())
+        {
+            AddSelectionRule(new ExcludeMemberByPathSelectionRule(memberPath));
+        }
+
         return this;
     }
 
@@ -53,7 +57,11 @@ public class EquivalencyOptions<TExpectation>
     /// </remarks>
     public EquivalencyOptions<TExpectation> Including(Expression<Func<TExpectation, object>> expression)
     {
-        AddSelectionRule(new IncludeMemberByPathSelectionRule(expression.GetMemberPath()));
+        foreach (var memberPath in expression.GetMemberPaths())
+        {
+            AddSelectionRule(new IncludeMemberByPathSelectionRule(memberPath));
+        }
+
         return this;
     }
 
