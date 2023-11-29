@@ -799,17 +799,20 @@ public partial class SelectionRulesSpecs
                     new
                     {
                         Name = "Dog",
-                        Age = 1
+                        Age = 1,
+                        Color = "Black"
                     },
                     new
                     {
                         Name = "Cat",
-                        Age = 1
+                        Age = 1,
+                        Color = "Black"
                     },
                     new
                     {
                         Name = "Bird",
-                        Age = 1
+                        Age = 1,
+                        Color = "Black"
                     },
                 }
             };
@@ -827,17 +830,20 @@ public partial class SelectionRulesSpecs
                     new
                     {
                         Name = "Dog",
-                        Age = 1
+                        Age = 1,
+                        Color = "Black"
                     },
                     new
                     {
                         Name = "Dog",
-                        Age = 2
+                        Age = 2,
+                        Color = "Gray"
                     },
                     new
                     {
                         Name = "Bird",
-                        Age = 3
+                        Age = 3,
+                        Color = "Black"
                     },
                 }
             };
@@ -846,10 +852,160 @@ public partial class SelectionRulesSpecs
             Action act = () => subject.Should().BeEquivalentTo(expectation, opts => opts
                 .Excluding(p => new { p.Names.MiddleName, p.Names.LastName })
                 .For(p => p.Pets)
-                .Exclude(p => new { p.Age }));
+                .Exclude(p => new { p.Age, p.Name }));
 
             // Assert
-            act.Should().Throw<XunitException>().WithMessage("*Pets[1].Name*");
+            act.Should().Throw<XunitException>().Which.Message.Should()
+                .NotMatch("*Pets[1].Age*").And
+                .NotMatch("*Pets[1].Name*").And
+                .Match("*Pets[1].Color*");
+        }
+
+        [Fact]
+        public void An_anonymous_object_can_exclude_nested_objects_inside_nested_collections()
+        {
+            // Arrange
+            var subject = new
+            {
+                Names = new
+                {
+                    FirstName = "John",
+                    MiddleName = "W.",
+                    LastName = "Smith",
+                },
+                Pets = new[]
+                {
+                    new
+                    {
+                        Name = "Dog",
+                        Fleas = new[]
+                        {
+                            new
+                            {
+                                Name = "Flea 1",
+                                Age = 1,
+                            },
+                            new
+                            {
+                                Name = "Flea 2",
+                                Age = 2,
+                            },
+                        },
+                    },
+                    new
+                    {
+                        Name = "Dog",
+                        Fleas = new[]
+                        {
+                            new
+                            {
+                                Name = "Flea 10",
+                                Age = 1,
+                            },
+                            new
+                            {
+                                Name = "Flea 21",
+                                Age = 3,
+                            },
+                        },
+                    },
+                    new
+                    {
+                        Name = "Dog",
+                        Fleas = new[]
+                        {
+                            new
+                            {
+                                Name = "Flea 1",
+                                Age = 1,
+                            },
+                            new
+                            {
+                                Name = "Flea 2",
+                                Age = 2,
+                            },
+                        },
+                    },
+                },
+            };
+
+            var expectation = new
+            {
+                Names = new
+                {
+                    FirstName = "John",
+                    MiddleName = "W.",
+                    LastName = "Smith",
+                },
+                Pets = new[]
+                {
+                    new
+                    {
+                        Name = "Dog",
+                        Fleas = new[]
+                        {
+                            new
+                            {
+                                Name = "Flea 1",
+                                Age = 1,
+                            },
+                            new
+                            {
+                                Name = "Flea 2",
+                                Age = 2,
+                            },
+                        },
+                    },
+                    new
+                    {
+                        Name = "Dog",
+                        Fleas = new[]
+                        {
+                            new
+                            {
+                                Name = "Flea 1",
+                                Age = 1,
+                            },
+                            new
+                            {
+                                Name = "Flea 2",
+                                Age = 1,
+                            },
+                        },
+                    },
+                    new
+                    {
+                        Name = "Bird",
+                        Fleas = new[]
+                        {
+                            new
+                            {
+                                Name = "Flea 1",
+                                Age = 1,
+                            },
+                            new
+                            {
+                                Name = "Flea 2",
+                                Age = 2,
+                            },
+                        },
+                    },
+                },
+            };
+
+            // Act
+            Action act = () => subject.Should().BeEquivalentTo(expectation, opts => opts
+                .Excluding(p => new { p.Names.MiddleName, p.Names.LastName })
+                .For(person => person.Pets)
+                .For(pet => pet.Fleas)
+                .Exclude(flea => new { flea.Name, flea.Age }));
+
+            // Assert
+            act.Should().Throw<XunitException>().Which.Message.Should()
+                .NotMatch("*Pets[*].Fleas[*].Age*").And
+                .NotMatch("*Pets[*].Fleas[*].Name*").And
+                .Match("*- Exclude*Pets[]Fleas[]Age*").And
+                .Match("*- Exclude*Pets[]Fleas[]Name*");
         }
 
         [Fact]
